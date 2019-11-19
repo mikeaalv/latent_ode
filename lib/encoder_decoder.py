@@ -13,11 +13,11 @@ import lib.utils as utils
 from torch.nn.modules.rnn import LSTM, GRU
 from lib.utils import get_device
 
-
-# GRU description: 
+## NOT USED
+# GRU description:
 # http://www.wildml.com/2015/10/recurrent-neural-network-tutorial-part-4-implementing-a-grulstm-rnn-with-python-and-theano/
 class GRU_unit(nn.Module):
-	def __init__(self, latent_dim, input_dim, 
+	def __init__(self, latent_dim, input_dim,
 		update_gate = None,
 		reset_gate = None,
 		new_state_net = None,
@@ -32,7 +32,7 @@ class GRU_unit(nn.Module):
 			   nn.Linear(n_units, latent_dim),
 			   nn.Sigmoid())
 			utils.init_network_weights(self.update_gate)
-		else: 
+		else:
 			self.update_gate  = update_gate
 
 		if reset_gate is None:
@@ -42,7 +42,7 @@ class GRU_unit(nn.Module):
 			   nn.Linear(n_units, latent_dim),
 			   nn.Sigmoid())
 			utils.init_network_weights(self.reset_gate)
-		else: 
+		else:
 			self.reset_gate  = reset_gate
 
 		if new_state_net is None:
@@ -51,7 +51,7 @@ class GRU_unit(nn.Module):
 			   nn.Tanh(),
 			   nn.Linear(n_units, latent_dim * 2))
 			utils.init_network_weights(self.new_state_net)
-		else: 
+		else:
 			self.new_state_net  = new_state_net
 
 
@@ -97,7 +97,7 @@ class GRU_unit(nn.Module):
 
 
 class Encoder_z0_RNN(nn.Module):
-	def __init__(self, latent_dim, input_dim, lstm_output_size = 20, 
+	def __init__(self, latent_dim, input_dim, lstm_output_size = 20,
 		use_delta_t = True, device = torch.device("cpu")):
 		
 		super(Encoder_z0_RNN, self).__init__()
@@ -122,7 +122,7 @@ class Encoder_z0_RNN(nn.Module):
 		self.gru_rnn = GRU(self.input_dim, self.gru_rnn_output_size).to(device)
 
 	def forward(self, data, time_steps, run_backwards = True):
-		# IMPORTANT: assumes that 'data' already has mask concatenated to it 
+		# IMPORTANT: assumes that 'data' already has mask concatenated to it
 
 		# data shape: [n_traj, n_tp, n_dims]
 		# shape required for rnn: (seq_len, batch, input_size)
@@ -132,7 +132,7 @@ class Encoder_z0_RNN(nn.Module):
 		assert(not torch.isnan(data).any())
 		assert(not torch.isnan(time_steps).any())
 
-		data = data.permute(1,0,2) 
+		data = data.permute(1,0,2)
 
 		if run_backwards:
 			# Look at data in the reverse order: from later points to the first
@@ -172,9 +172,9 @@ class Encoder_z0_ODE_RNN(nn.Module):
 	# For every y_i we have two versions: encoded from data and derived from ODE by running it backwards from t_i+1 to t_i
 	# Compute a weighted sum of y_i from data and y_i from ode. Use weighted y_i as an initial value for ODE runing from t_i to t_i-1
 	# Continue until we get to z0
-	def __init__(self, latent_dim, input_dim, z0_diffeq_solver = None, 
-		z0_dim = None, GRU_update = None, 
-		n_gru_units = 100, 
+	def __init__(self, latent_dim, input_dim, z0_diffeq_solver = None,
+		z0_dim = None, GRU_update = None,
+		n_gru_units = 100,
 		device = torch.device("cpu")):
 		
 		super(Encoder_z0_ODE_RNN, self).__init__()
@@ -185,8 +185,8 @@ class Encoder_z0_ODE_RNN(nn.Module):
 			self.z0_dim = z0_dim
 
 		if GRU_update is None:
-			self.GRU_update = GRU_unit(latent_dim, input_dim, 
-				n_units = n_gru_units, 
+			self.GRU_update = GRU_unit(latent_dim, input_dim,
+				n_units = n_gru_units,
 				device=device).to(device)
 		else:
 			self.GRU_update = GRU_update
@@ -206,7 +206,7 @@ class Encoder_z0_ODE_RNN(nn.Module):
 
 	def forward(self, data, time_steps, run_backwards = True, save_info = False):
 		# data, time_steps -- observations and their time stamps
-		# IMPORTANT: assumes that 'data' already has mask concatenated to it 
+		# IMPORTANT: assumes that 'data' already has mask concatenated to it
 		assert(not torch.isnan(data).any())
 		assert(not torch.isnan(time_steps).any())
 
@@ -236,9 +236,9 @@ class Encoder_z0_ODE_RNN(nn.Module):
 		return mean_z0, std_z0
 
 
-	def run_odernn(self, data, time_steps, 
+	def run_odernn(self, data, time_steps,
 		run_backwards = True, save_info = False):
-		# IMPORTANT: assumes that 'data' already has mask concatenated to it 
+		# IMPORTANT: assumes that 'data' already has mask concatenated to it
 
 		n_traj, n_tp, n_dims = data.size()
 		extra_info = []
@@ -298,14 +298,14 @@ class Encoder_z0_ODE_RNN(nn.Module):
 			
 			yi, yi_std = self.GRU_update(yi_ode, prev_std, xi)
 
-			prev_y, prev_std = yi, yi_std			
+			prev_y, prev_std = yi, yi_std
 			prev_t, t_i = time_steps[i],  time_steps[i-1]
 
 			latent_ys.append(yi)
 
 			if save_info:
 				d = {"yi_ode": yi_ode.detach(), #"yi_from_data": yi_from_data,
-					 "yi": yi.detach(), "yi_std": yi_std.detach(), 
+					 "yi": yi.detach(), "yi_std": yi_std.detach(),
 					 "time_points": time_points.detach(), "ode_sol": ode_sol.detach()}
 				extra_info.append(d)
 
@@ -326,10 +326,8 @@ class Decoder(nn.Module):
 		decoder = nn.Sequential(
 		   nn.Linear(latent_dim, input_dim),)
 
-		utils.init_network_weights(decoder)	
+		utils.init_network_weights(decoder)
 		self.decoder = decoder
 
 	def forward(self, data):
 		return self.decoder(data)
-
-
