@@ -13,7 +13,6 @@ import lib.utils as utils
 from torch.nn.modules.rnn import LSTM, GRU
 from lib.utils import get_device
 
-## NOT USED
 # GRU description:
 # http://www.wildml.com/2015/10/recurrent-neural-network-tutorial-part-4-implementing-a-grulstm-rnn-with-python-and-theano/
 class GRU_unit(nn.Module):
