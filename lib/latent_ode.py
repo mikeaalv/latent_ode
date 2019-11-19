@@ -24,8 +24,8 @@ from lib.base_models import VAE_Baseline
 
 
 class LatentODE(VAE_Baseline):
-	def __init__(self, input_dim, latent_dim, encoder_z0, decoder, diffeq_solver, 
-		z0_prior, device, obsrv_std = None, 
+	def __init__(self, input_dim, latent_dim, encoder_z0, decoder, diffeq_solver,
+		z0_prior, device, obsrv_std = None,
 		use_binary_classif = False, use_poisson_proc = False,
 		linear_classifier = False,
 		classif_per_tp = False,
@@ -33,11 +33,11 @@ class LatentODE(VAE_Baseline):
 		train_classif_w_reconstr = False):
 
 		super(LatentODE, self).__init__(
-			input_dim = input_dim, latent_dim = latent_dim, 
-			z0_prior = z0_prior, 
-			device = device, obsrv_std = obsrv_std, 
+			input_dim = input_dim, latent_dim = latent_dim,
+			z0_prior = z0_prior,
+			device = device, obsrv_std = obsrv_std,
 			use_binary_classif = use_binary_classif,
-			classif_per_tp = classif_per_tp, 
+			classif_per_tp = classif_per_tp,
 			linear_classifier = linear_classifier,
 			use_poisson_proc = use_poisson_proc,
 			n_labels = n_labels,
@@ -48,7 +48,7 @@ class LatentODE(VAE_Baseline):
 		self.decoder = decoder
 		self.use_poisson_proc = use_poisson_proc
 
-	def get_reconstruction(self, time_steps_to_predict, truth, truth_time_steps, 
+	def get_reconstruction(self, time_steps_to_predict, truth, truth_time_steps,
 		mask = None, n_traj_samples = 1, run_backwards = True, mode = None):
 
 		if isinstance(self.encoder_z0, Encoder_z0_ODE_RNN) or \
@@ -128,12 +128,10 @@ class LatentODE(VAE_Baseline):
 			zeros = torch.zeros(n_traj_samples, n_traj,self.input_dim).to(self.device)
 			starting_point_enc_aug = torch.cat((starting_point_enc, zeros), -1)
 
-		sol_y = self.diffeq_solver.sample_traj_from_prior(starting_point_enc_aug, time_steps_to_predict, 
+		sol_y = self.diffeq_solver.sample_traj_from_prior(starting_point_enc_aug, time_steps_to_predict,
 			n_traj_samples = 3)
 
 		if self.use_poisson_proc:
 			sol_y, log_lambda_y, int_lambda, _ = self.diffeq_solver.ode_func.extract_poisson_rate(sol_y)
 		
 		return self.decoder(sol_y)
-
-

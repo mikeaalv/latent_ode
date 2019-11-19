@@ -22,7 +22,7 @@ from torch.distributions import Independent
 from torch.nn.parameter import Parameter
 from lib.base_models import Baseline, VAE_Baseline
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Exponential decay of the hidden states for RNN
 # adapted from GRU-D implementation: https://github.com/zhiyongc/GRU-D/
 
@@ -45,7 +45,7 @@ class GRUCellExpDecay(RNNCellBase):
 		data = input[:, :-self.input_size_for_decay]
 
 		decay = torch.exp( - torch.min(torch.max(
-			torch.zeros([1]).to(self.device), self.decay(cum_delta_ts)), 
+			torch.zeros([1]).to(self.device), self.decay(cum_delta_ts)),
 			torch.ones([1]).to(self.device) * 1000 ))
 
 		hidden = hidden * decay
@@ -75,8 +75,8 @@ class GRUCellExpDecay(RNNCellBase):
 		)
 
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# Imputation with a weighed average of previous value and empirical mean 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Imputation with a weighed average of previous value and empirical mean
 # adapted from GRU-D implementation: https://github.com/zhiyongc/GRU-D/
 def get_cum_delta_ts(data, delta_ts, mask):
 	n_traj, n_tp, n_dims = data.size()
@@ -85,7 +85,7 @@ def get_cum_delta_ts(data, delta_ts, mask):
 	missing_index = np.where(mask.cpu().numpy() == 0)
 
 	for idx in range(missing_index[0].shape[0]):
-		i = missing_index[0][idx] 
+		i = missing_index[0][idx]
 		j = missing_index[1][idx]
 		k = missing_index[2][idx]
 
@@ -106,7 +106,7 @@ def impute_using_input_decay(data, delta_ts, mask, w_input_decay, b_input_decay)
 
 	data_last_obsv = np.copy(data.cpu().numpy())
 	for idx in range(missing_index[0].shape[0]):
-		i = missing_index[0][idx] 
+		i = missing_index[0][idx]
 		j = missing_index[1][idx]
 		k = missing_index[2][idx]
 
@@ -119,7 +119,7 @@ def impute_using_input_decay(data, delta_ts, mask, w_input_decay, b_input_decay)
 	data_last_obsv = torch.Tensor(data_last_obsv).to(get_device(data))
 
 	zeros = torch.zeros([n_traj, n_tp, n_dims]).to(get_device(data))
-	decay = torch.exp( - torch.min( torch.max(zeros, 
+	decay = torch.exp( - torch.min( torch.max(zeros,
 		w_input_decay * cum_delta_ts + b_input_decay), zeros + 1000 ))
 
 	data_means = torch.mean(data, 1).unsqueeze(1)
@@ -128,9 +128,9 @@ def impute_using_input_decay(data, delta_ts, mask, w_input_decay, b_input_decay)
 	return data_imputed
 
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-def run_rnn(inputs, delta_ts, cell, first_hidden=None, 
+def run_rnn(inputs, delta_ts, cell, first_hidden=None,
 	mask = None, feed_previous=False, n_steps=0,
 	decoder = None, input_decay_params = None,
 	feed_previous_w_prob = 0.,
@@ -203,8 +203,8 @@ def run_rnn(inputs, delta_ts, cell, first_hidden=None,
 
 
 class Classic_RNN(Baseline):
-	def __init__(self, input_dim, latent_dim, device, 
-		concat_mask = False, obsrv_std = 0.1, 
+	def __init__(self, input_dim, latent_dim, device,
+		concat_mask = False, obsrv_std = 0.1,
 		use_binary_classif = False,
 		linear_classifier = False,
 		classif_per_tp = False,
@@ -213,8 +213,8 @@ class Classic_RNN(Baseline):
 		n_labels = 1,
 		train_classif_w_reconstr = False):
 		
-		super(Classic_RNN, self).__init__(input_dim, latent_dim, device, 
-			obsrv_std = obsrv_std, 
+		super(Classic_RNN, self).__init__(input_dim, latent_dim, device,
+			obsrv_std = obsrv_std,
 			use_binary_classif = use_binary_classif,
 			classif_per_tp = classif_per_tp,
 			linear_classifier = linear_classifier,
@@ -239,9 +239,9 @@ class Classic_RNN(Baseline):
 			self.rnn_cell = GRUCell(encoder_dim + 1, latent_dim) # +1 for delta t
 		elif cell == "expdecay":
 			self.rnn_cell = GRUCellExpDecay(
-				input_size = encoder_dim, 
+				input_size = encoder_dim,
 				input_size_for_decay = input_dim,
-				hidden_size = latent_dim, 
+				hidden_size = latent_dim,
 				device = device)
 		else:
 			raise Exception("Unknown RNN cell: {}".format(cell))
@@ -254,7 +254,7 @@ class Classic_RNN(Baseline):
 		self.z0_net = lambda hidden_state: hidden_state
 
 
-	def get_reconstruction(self, time_steps_to_predict, data, truth_time_steps, 
+	def get_reconstruction(self, time_steps_to_predict, data, truth_time_steps,
 		mask = None, n_traj_samples = 1, mode = None):
 
 		assert(mask is not None)
@@ -283,7 +283,7 @@ class Classic_RNN(Baseline):
 		if mask is not None:
 			utils.check_mask(data, mask)
 
-		hidden_state, all_hiddens = run_rnn(data, delta_ts, 
+		hidden_state, all_hiddens = run_rnn(data, delta_ts,
 			cell = self.rnn_cell, mask = mask,
 			input_decay_params = input_decay_params,
 			feed_previous_w_prob = (0. if self.use_binary_classif else 0.5),
@@ -308,22 +308,22 @@ class Classic_RNN(Baseline):
 
 
 class RNN_VAE(VAE_Baseline):
-	def __init__(self, input_dim, latent_dim, rec_dims, 
-		z0_prior, device, 
-		concat_mask = False, obsrv_std = 0.1, 
+	def __init__(self, input_dim, latent_dim, rec_dims,
+		z0_prior, device,
+		concat_mask = False, obsrv_std = 0.1,
 		input_space_decay = False,
 		use_binary_classif = False,
 		classif_per_tp =False,
-		linear_classifier = False, 
+		linear_classifier = False,
 		cell = "gru", n_units = 100,
 		n_labels = 1,
 		train_classif_w_reconstr = False):
 	
 		super(RNN_VAE, self).__init__(
-			input_dim = input_dim, latent_dim = latent_dim, 
-			z0_prior = z0_prior, 
-			device = device, obsrv_std = obsrv_std, 
-			use_binary_classif = use_binary_classif, 
+			input_dim = input_dim, latent_dim = latent_dim,
+			z0_prior = z0_prior,
+			device = device, obsrv_std = obsrv_std,
+			use_binary_classif = use_binary_classif,
 			classif_per_tp = classif_per_tp,
 			linear_classifier = linear_classifier,
 			n_labels = n_labels,
@@ -342,13 +342,13 @@ class RNN_VAE(VAE_Baseline):
 			self.rnn_cell_enc = GRUCellExpDecay(
 				input_size = encoder_dim,
 				input_size_for_decay = input_dim,
-				hidden_size = rec_dims, 
+				hidden_size = rec_dims,
 				device = device)
 			self.rnn_cell_dec = GRUCellExpDecay(
 				input_size = encoder_dim,
 				input_size_for_decay = input_dim,
-				hidden_size = latent_dim, 
-				device = device) 
+				hidden_size = latent_dim,
+				device = device)
 		else:
 			raise Exception("Unknown RNN cell: {}".format(cell))
 
@@ -371,7 +371,7 @@ class RNN_VAE(VAE_Baseline):
 			self.b_input_decay =  Parameter(torch.Tensor(1, int(input_dim))).to(self.device)
 		self.input_space_decay = input_space_decay
 
-	def get_reconstruction(self, time_steps_to_predict, data, truth_time_steps, 
+	def get_reconstruction(self, time_steps_to_predict, data, truth_time_steps,
 		mask = None, n_traj_samples = 1, mode = None):
 
 		assert(mask is not None)
@@ -403,7 +403,7 @@ class RNN_VAE(VAE_Baseline):
 		if self.input_space_decay:
 			input_decay_params = (self.w_input_decay, self.b_input_decay)
 
-		hidden_state, _ = run_rnn(data, delta_ts, 
+		hidden_state, _ = run_rnn(data, delta_ts,
 			cell = self.rnn_cell_enc, mask = mask,
 			input_decay_params = input_decay_params)
 
@@ -418,7 +418,7 @@ class RNN_VAE(VAE_Baseline):
 
 		_, all_hiddens = run_rnn(data, delta_ts,
 			cell = self.rnn_cell_dec,
-			first_hidden = z0_sample, feed_previous = True, 
+			first_hidden = z0_sample, feed_previous = True,
 			n_steps = time_steps_to_predict.size(0),
 			decoder = self.decoder,
 			input_decay_params = input_decay_params)
@@ -438,6 +438,3 @@ class RNN_VAE(VAE_Baseline):
 
 		# outputs shape: [n_traj_samples, n_traj, n_tp, n_dims]
 		return outputs, extra_info
-
-
-

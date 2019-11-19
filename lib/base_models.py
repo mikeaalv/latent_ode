@@ -2,7 +2,7 @@
 # Latent ODEs for Irregularly-Sampled Time Series
 # Author: Yulia Rubanova
 ###########################
-
+##the baseline models
 import numpy as np
 import torch
 import torch.nn as nn
@@ -31,7 +31,7 @@ def create_classifier(z0_dim, n_labels):
 
 
 class Baseline(nn.Module):
-	def __init__(self, input_dim, latent_dim, device, 
+	def __init__(self, input_dim, latent_dim, device,
 		obsrv_std = 0.01, use_binary_classif = False,
 		classif_per_tp = False,
 		use_poisson_proc = False,
@@ -57,7 +57,7 @@ class Baseline(nn.Module):
 		if use_poisson_proc:
 			z0_dim += latent_dim
 
-		if use_binary_classif: 
+		if use_binary_classif:
 			if linear_classifier:
 				self.classifier = nn.Sequential(
 					nn.Linear(z0_dim, n_labels))
@@ -73,7 +73,7 @@ class Baseline(nn.Module):
 			mask = mask.repeat(pred_y.size(0), 1, 1, 1)
 
 		# Compute likelihood of the data under the predictions
-		log_density_data = masked_gaussian_log_density(pred_y, truth, 
+		log_density_data = masked_gaussian_log_density(pred_y, truth,
 			obsrv_std = self.obsrv_std, mask = mask)
 		log_density_data = log_density_data.permute(1,0)
 
@@ -102,8 +102,8 @@ class Baseline(nn.Module):
 
 		# Condition on subsampled points
 		# Make predictions for all the points
-		pred_x, info = self.get_reconstruction(batch_dict["tp_to_predict"], 
-			batch_dict["observed_data"], batch_dict["observed_tp"], 
+		pred_x, info = self.get_reconstruction(batch_dict["tp_to_predict"],
+			batch_dict["observed_data"], batch_dict["observed_tp"],
 			mask = batch_dict["observed_mask"], n_traj_samples = n_traj_samples,
 			mode = batch_dict["mode"])
 
@@ -116,18 +116,18 @@ class Baseline(nn.Module):
 
 		################################
 		# Compute CE loss for binary classification on Physionet
-		# Use only last attribute -- mortatility in the hospital 
+		# Use only last attribute -- mortatility in the hospital
 		device = get_device(batch_dict["data_to_predict"])
 		ce_loss = torch.Tensor([0.]).to(device)
 		
 		if (batch_dict["labels"] is not None) and self.use_binary_classif:
 			if (batch_dict["labels"].size(-1) == 1) or (len(batch_dict["labels"].size()) == 1):
 				ce_loss = compute_binary_CE_loss(
-					info["label_predictions"], 
+					info["label_predictions"],
 					batch_dict["labels"])
 			else:
 				ce_loss = compute_multiclass_CE_loss(
-					info["label_predictions"], 
+					info["label_predictions"],
 					batch_dict["labels"],
 					mask = batch_dict["mask_predicted_data"])
 
@@ -141,7 +141,7 @@ class Baseline(nn.Module):
 		pois_log_likelihood = torch.Tensor([0.]).to(get_device(batch_dict["data_to_predict"]))
 		if self.use_poisson_proc:
 			pois_log_likelihood = compute_poisson_proc_likelihood(
-				batch_dict["data_to_predict"], pred_x, 
+				batch_dict["data_to_predict"], pred_x,
 				info, mask = batch_dict["mask_predicted_data"])
 			# Take mean over n_traj
 			pois_log_likelihood = torch.mean(pois_log_likelihood, 1)
@@ -149,7 +149,7 @@ class Baseline(nn.Module):
 		loss = - torch.mean(likelihood)
 
 		if self.use_poisson_proc:
-			loss = loss - 0.1 * pois_log_likelihood 
+			loss = loss - 0.1 * pois_log_likelihood
 
 		if self.use_binary_classif:
 			if self.train_classif_w_reconstr:
@@ -175,9 +175,9 @@ class Baseline(nn.Module):
 
 
 class VAE_Baseline(nn.Module):
-	def __init__(self, input_dim, latent_dim, 
+	def __init__(self, input_dim, latent_dim,
 		z0_prior, device,
-		obsrv_std = 0.01, 
+		obsrv_std = 0.01,
 		use_binary_classif = False,
 		classif_per_tp = False,
 		use_poisson_proc = False,
@@ -205,7 +205,7 @@ class VAE_Baseline(nn.Module):
 		if use_poisson_proc:
 			z0_dim += latent_dim
 
-		if use_binary_classif: 
+		if use_binary_classif:
 			if linear_classifier:
 				self.classifier = nn.Sequential(
 					nn.Linear(z0_dim, n_labels))
@@ -224,7 +224,7 @@ class VAE_Baseline(nn.Module):
 		
 		if mask is not None:
 			mask = mask.repeat(pred_y.size(0), 1, 1, 1)
-		log_density_data = masked_gaussian_log_density(pred_y, truth_repeated, 
+		log_density_data = masked_gaussian_log_density(pred_y, truth_repeated,
 			obsrv_std = self.obsrv_std, mask = mask)
 		log_density_data = log_density_data.permute(1,0)
 		log_density = torch.mean(log_density_data, 1)
@@ -253,8 +253,8 @@ class VAE_Baseline(nn.Module):
 	def compute_all_losses(self, batch_dict, n_traj_samples = 1, kl_coef = 1.):
 		# Condition on subsampled points
 		# Make predictions for all the points
-		pred_y, info = self.get_reconstruction(batch_dict["tp_to_predict"], 
-			batch_dict["observed_data"], batch_dict["observed_tp"], 
+		pred_y, info = self.get_reconstruction(batch_dict["tp_to_predict"],
+			batch_dict["observed_data"], batch_dict["observed_tp"],
 			mask = batch_dict["observed_mask"], n_traj_samples = n_traj_samples,
 			mode = batch_dict["mode"])
 
@@ -290,7 +290,7 @@ class VAE_Baseline(nn.Module):
 		pois_log_likelihood = torch.Tensor([0.]).to(get_device(batch_dict["data_to_predict"]))
 		if self.use_poisson_proc:
 			pois_log_likelihood = compute_poisson_proc_likelihood(
-				batch_dict["data_to_predict"], pred_y, 
+				batch_dict["data_to_predict"], pred_y,
 				info, mask = batch_dict["mask_predicted_data"])
 			# Take mean over n_traj
 			pois_log_likelihood = torch.mean(pois_log_likelihood, 1)
@@ -303,11 +303,11 @@ class VAE_Baseline(nn.Module):
 
 			if (batch_dict["labels"].size(-1) == 1) or (len(batch_dict["labels"].size()) == 1):
 				ce_loss = compute_binary_CE_loss(
-					info["label_predictions"], 
+					info["label_predictions"],
 					batch_dict["labels"])
 			else:
 				ce_loss = compute_multiclass_CE_loss(
-					info["label_predictions"], 
+					info["label_predictions"],
 					batch_dict["labels"],
 					mask = batch_dict["mask_predicted_data"])
 
@@ -317,7 +317,7 @@ class VAE_Baseline(nn.Module):
 			loss = - torch.mean(rec_likelihood - kl_coef * kldiv_z0,0)
 			
 		if self.use_poisson_proc:
-			loss = loss - 0.1 * pois_log_likelihood 
+			loss = loss - 0.1 * pois_log_likelihood
 
 		if self.use_binary_classif:
 			if self.train_classif_w_reconstr:
@@ -338,6 +338,3 @@ class VAE_Baseline(nn.Module):
 			results["label_predictions"] = info["label_predictions"].detach()
 
 		return results
-
-
-
