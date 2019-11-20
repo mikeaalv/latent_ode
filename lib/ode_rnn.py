@@ -28,7 +28,7 @@ class ODE_RNN(Baseline):
 		concat_mask = False, obsrv_std = 0.1, use_binary_classif = False,
 		classif_per_tp = False, n_labels = 1, train_classif_w_reconstr = False):
 
-		Baseline.__init__(self, input_dim, latent_dim, device = device, 
+		Baseline.__init__(self, input_dim, latent_dim, device = device,
 			obsrv_std = obsrv_std, use_binary_classif = use_binary_classif,
 			classif_per_tp = classif_per_tp,
 			n_labels = n_labels,
@@ -36,11 +36,11 @@ class ODE_RNN(Baseline):
 
 		ode_rnn_encoder_dim = latent_dim
 	
-		self.ode_gru = Encoder_z0_ODE_RNN( 
-			latent_dim = ode_rnn_encoder_dim, 
+		self.ode_gru = Encoder_z0_ODE_RNN(
+			latent_dim = ode_rnn_encoder_dim,
 			input_dim = (input_dim) * 2, # input and the mask
-			z0_diffeq_solver = z0_diffeq_solver, 
-			n_gru_units = n_gru_units, 
+			z0_diffeq_solver = z0_diffeq_solver,
+			n_gru_units = n_gru_units,
 			device = device).to(device)
 
 		self.z0_diffeq_solver = z0_diffeq_solver
@@ -53,13 +53,13 @@ class ODE_RNN(Baseline):
 		utils.init_network_weights(self.decoder)
 
 
-	def get_reconstruction(self, time_steps_to_predict, data, truth_time_steps, 
+	def get_reconstruction(self, time_steps_to_predict, data, truth_time_steps,
 		mask = None, n_traj_samples = None, mode = None):
 
 		if (len(truth_time_steps) != len(time_steps_to_predict)) or (torch.sum(time_steps_to_predict - truth_time_steps) != 0):
 			raise Exception("Extrapolation mode not implemented for ODE-RNN")
 
-		# time_steps_to_predict and truth_time_steps should be the same 
+		# time_steps_to_predict and truth_time_steps should be the same
 		assert(len(truth_time_steps) == len(time_steps_to_predict))
 		assert(mask is not None)
 		
@@ -90,7 +90,3 @@ class ODE_RNN(Baseline):
 
 		# outputs shape: [n_traj_samples, n_traj, n_tp, n_dims]
 		return outputs, extra_info
-
-
-
-
