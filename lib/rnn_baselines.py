@@ -205,13 +205,13 @@ def run_rnn(inputs, delta_ts, cell, first_hidden=None,
 class Classic_RNN(Baseline):
 	def __init__(self, input_dim, latent_dim, device,
 		concat_mask = False, obsrv_std = 0.1,
-		use_binary_classif = False,
-		linear_classifier = False,
-		classif_per_tp = False,
-		input_space_decay = False,
-		cell = "gru", n_units = 100,
-		n_labels = 1,
-		train_classif_w_reconstr = False):
+		use_binary_classif = False,#for one data set and loss function calculation
+		linear_classifier = False,#look run_models input argument
+		classif_per_tp = False,# do classification per time point rather than on a time series as a whole
+		input_space_decay = False,#RNN-Impute
+		cell = "gru", n_units = 100,#layer size for linear layer
+		n_labels = 1,#number of labels
+		train_classif_w_reconstr = False): ## a data set that a need multiple types of losses
 		
 		super(Classic_RNN, self).__init__(input_dim, latent_dim, device,
 			obsrv_std = obsrv_std,
@@ -224,7 +224,7 @@ class Classic_RNN(Baseline):
 		self.concat_mask = concat_mask
 		
 		encoder_dim = int(input_dim)
-		if concat_mask:
+		if concat_mask: ##data + mask as input (input size)
 			encoder_dim = encoder_dim * 2
 
 		self.decoder = nn.Sequential(
